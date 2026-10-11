@@ -1,0 +1,100 @@
+name: Release
+
+# Publishes to PyPI via OIDC trusted publishing. No long-lived API token is
+# stored in this repository or in GitHub secrets.
+#
+# One-time setup on PyPI (https://pypi.org/manage/account/publishing/):
+#   PyPI Project Name : phocinae-cli
+#   Owner             : Phocinae
+#   Repository name   : phocinae-cli
+#   Workflow name     : release.yml
+#   Environment name  : pypi
+# After that, pushing a tag like `v0.1.1` publishes automatically.
+#
+# `workflow_dispatch` re-runs a release without a new tag. A tag push runs the
+# workflow file AT THE TAGGED COMMIT, so a fix committed after the tag would
+# never run under that tag; dispatching on the branch checks out the fixed tree.
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      # Never publish an artifact that has not passed the smoke suite: this is
+      # the gate that stops a broken release from reaching PyPI.
+      - name: Smoke test
+        run: python tests/smoke.py
+
+      - name: Build
+        run: |
+          python -m pip install build twine
+          python -m build
+          python -m twine check dist/*
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+  publish:
+    needs: test
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/phocinae-cli
+    permissions:
+      id-token: write # required for OIDC trusted publishing
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist
+          path: dist/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          # A version that already exists makes PyPI answer 400; that means the
+          # release is done, not that the job should go red.
+          skip-existing: true
+
+  release:
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Create the GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${GITHUB_REF_TYPE}" = "tag" ]; then
+            REF_NAME="${GITHUB_REF_NAME}"
+          else
+            REF_NAME="v$(python -c "import re,pathlib;print(re.search(r'version = \"([^\"]+)\"', pathlib.Path('pyproject.toml').read_text()).group(1))")"
+          fi
+          if gh release view "${REF_NAME}" >/dev/null 2>&1; then
+            echo "release ${REF_NAME} already exists; skipping"
+            exit 0
+          fi
+          gh release create "${REF_NAME}" --title "${REF_NAME}" --generate-notes

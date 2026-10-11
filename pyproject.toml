@@ -1,0 +1,52 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "phocinae-cli"
+version = "0.1.0"
+description = "斑海豹 Phocinae CLI — 一行命令本地决策（phocinae-server /v1/systemone 客户端，含 fail-closed 命令审批门）"
+readme = "README.md"
+requires-python = ">=3.9"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Phocinae" }]
+keywords = ["decision-model", "system-one", "phocinae", "typed-decisions", "local-inference", "cli"]
+dependencies = [
+    "typer>=0.9",
+    "rich>=13",
+    "httpx>=0.24",
+]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Natural Language :: Chinese (Simplified)",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Topic :: Utilities",
+]
+
+[project.urls]
+Homepage = "https://github.com/Phocinae/phocinae-cli"
+Repository = "https://github.com/Phocinae/phocinae-cli"
+"Bug Tracker" = "https://github.com/Phocinae/phocinae-cli/issues"
+"Model card" = "https://huggingface.co/Phocinae/Phocinae-Largha-150M-v1"
+Server = "https://github.com/Phocinae/phocinae-server"
+Guard = "https://github.com/Phocinae/phocinae-guard"
+
+[project.scripts]
+phocinae = "phocinae_cli.__main__:main"
+
+[project.optional-dependencies]
+dev = ["build>=1.2", "twine>=5"]
+
+[tool.setuptools.packages.find]
+where = ["src"]

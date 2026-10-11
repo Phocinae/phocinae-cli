@@ -1,0 +1,64 @@
+name: CI
+
+on:
+  push:
+    branches: ['**']
+    tags-ignore: ['v*']
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    name: test (python ${{ matrix.python }} on ${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python: ['3.9', '3.12']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+
+      - name: Install
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .
+
+      # 跨平台冒烟驱动：自起 mock server，覆盖 6 个子命令、管道/批量、
+      # 错误分类与 gate 的 0/1/2/3 退出码契约。
+      - name: Smoke test
+        run: python tests/smoke.py
+
+      - name: Single-file zero-dependency build check
+        run: python -c "import ast; ast.parse(open('phocinae.py', encoding='utf-8').read()); print('phocinae.py parses OK')"
+
+      - name: Build sdist and wheel
+        run: |
+          python -m pip install build
+          python -m build
+
+  # 冒烟驱动以 `python -m phocinae_cli` 调用（不依赖 console script 是否在 PATH）。
+  # 这个 job 额外证明「装完之后 phocinae 命令真的能用」，以及退出码语义。
+  console-script:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install and exercise the console script
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install .
+          phocinae --version
+          # deny 必须给出 2；allow 必须给出 0
+          if phocinae gate --command "rm -rf /"; then
+            echo "expected a non-zero exit for a denied command"; exit 1
+          else
+            test $? -eq 2
+          fi
+          phocinae gate --command "git status"
