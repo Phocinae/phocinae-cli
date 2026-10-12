@@ -23,7 +23,7 @@ import sys
 import urllib.error
 import urllib.request
 
-VERSION = "0.1.0"
+VERSION = "0.1.1"
 DEFAULT_SERVER = "http://127.0.0.1:8155"
 DEFAULT_MODEL = "Phocinae-Largha-150M-v1"
 DEFAULT_TIMEOUT = 30.0
