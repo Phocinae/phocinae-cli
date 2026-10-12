@@ -52,6 +52,11 @@ jobs:
           path: .guard-for-parity
 
       - name: L0 parity with phocinae-guard
+        # 必须显式指定 bash：这一步用的是 POSIX 的 `if [ ... ]; then ... fi` 与
+        # `"$PWD/..."`，而 GitHub Actions 在 Windows runner 上默认拿 PowerShell 跑
+        # `run:`。之前没有这一行，于是 windows 上脚本第一行就 ParserError，
+        # "guard 缺失就跳过"的兜底都没机会执行，windows job 直接红灯。
+        shell: bash
         run: |
           if [ ! -f .guard-for-parity/guard.py ]; then
             echo "::warning::phocinae-guard checkout failed; L0 parity not verified"
