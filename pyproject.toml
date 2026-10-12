@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "phocinae-cli"
-version = "0.1.1"
+version = "0.1.2"
 description = "斑海豹 Phocinae CLI — 一行命令本地决策（phocinae-server /v1/systemone 客户端，含 fail-closed 命令审批门）"
 readme = "README.md"
 requires-python = ">=3.9"

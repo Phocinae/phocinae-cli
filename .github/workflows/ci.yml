@@ -34,6 +34,31 @@ jobs:
           python -m pip install --upgrade pip
           python -m pip install -e .
 
+      # The CLI carries its own L0 table and matcher, generated from
+      # phocinae-guard. It used to be a hand copy of guard 0.1.0, and when guard
+      # fixed ten reproducible bypasses in 0.1.3 this copy did not follow — so
+      # `ls\nrm -rf /` was denied by guard and ALLOWED by the CLI. Two packages
+      # giving opposite verdicts for the same command is worse than one package
+      # missing a feature, because the user believes they have the same gate.
+      #
+      # This checks the two implementations verdict-by-verdict over a shared
+      # corpus including every bypass sample. It needs guard present, so guard is
+      # cloned beside the checkout; without it the test SKIPs rather than passing.
+      - name: Checkout phocinae-guard (for the L0 parity check)
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          repository: Phocinae/phocinae-guard
+          path: .guard-for-parity
+
+      - name: L0 parity with phocinae-guard
+        run: |
+          if [ ! -f .guard-for-parity/guard.py ]; then
+            echo "::warning::phocinae-guard checkout failed; L0 parity not verified"
+            exit 0
+          fi
+          PHOCINAE_GUARD_PY="$PWD/.guard-for-parity/guard.py" python tests/test_l0_parity.py
+
       # 跨平台冒烟驱动：自起 mock server，覆盖 6 个子命令、管道/批量、
       # 错误分类与 gate 的 0/1/2/3 退出码契约。
       - name: Smoke test

@@ -199,7 +199,7 @@ def main():
     print("\n---------- 0. 安装自检 ----------")
     rc, out, err, _ = run(["--version"], env_extra={"PHOC_SERVER": server})
     check("0.1 `phocinae --version` exit=0 且输出含版本号",
-          rc == 0 and "0.1.1" in (out + err), "exit=%s out=%r err=%r" % (rc, out, err))
+          rc == 0 and "0.1.2" in (out + err), "exit=%s out=%r err=%r" % (rc, out, err))
 
     # 1. 起 mock --------------------------------------------------------
     print("\n---------- 1. 启动 mock server ----------")
